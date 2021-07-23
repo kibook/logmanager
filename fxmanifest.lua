@@ -1,5 +1,5 @@
 fx_version "cerulean"
-game "gta5"
+game "common"
 
 shared_script "config.lua"
 server_script "server.lua"
