@@ -2,6 +2,16 @@ local serverLog = json.decode(LoadResourceFile(GetCurrentResourceName(), "log.js
 
 RegisterNetEvent("logmanager:upload")
 
+local function log(resource, message)
+	local entry = {}
+
+	entry.time = os.time()
+	entry.resource = resource or GetCurrentResourceName()
+	entry.message = message
+
+	table.insert(serverLog, entry)
+end
+
 local function matchesQuery(query, entry)
 	if query.playerName and string.lower(query.playerName) ~= string.lower(entry.playerName) then
 		return false
@@ -28,8 +38,18 @@ end
 local function printLogEntry(entry, query)
 	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
 
-	print(("[%s][%s] %s: %s"):format(date, entry.resource, entry.playerName, entry.message))
+	print(("[%s][%s] %s: %s"):format(date, entry.resource, entry.playerName or "server", entry.message))
 end
+
+local function saveLog()
+	table.sort(serverLog, function(a, b)
+		return a.time < b.time
+	end)
+
+	SaveResourceFile(GetCurrentResourceName(), "log.json", json.encode(serverLog), -1)
+end
+
+exports("log", log)
 
 AddEventHandler("logmanager:upload", function(log, uploadTime)
 	local identifiers = GetPlayerIdentifiers(source)
@@ -44,12 +64,6 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 
 		table.insert(serverLog, entry)
 	end
-
-	table.sort(serverLog, function(a, b)
-		return a.time < b.time
-	end)
-
-	SaveResourceFile(GetCurrentResourceName(), "log.json", json.encode(serverLog), -1)
 end)
 
 RegisterCommand("showlogs", function(source, args, raw)
@@ -69,3 +83,10 @@ RegisterCommand("showlogs", function(source, args, raw)
 		end
 	end
 end, true)
+
+Citizen.CreateThread(function()
+	while true do
+		saveLog()
+		Citizen.Wait(5000)
+	end
+end)
