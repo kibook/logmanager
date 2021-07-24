@@ -13,7 +13,7 @@ local function log(resource, message)
 end
 
 local function matchesQuery(query, entry)
-	if query.playerName and string.lower(query.playerName) ~= string.lower(entry.playerName) then
+	if query.playerName and entry.playerName and string.lower(query.playerName) ~= string.lower(entry.playerName) then
 		return false
 	end
 
