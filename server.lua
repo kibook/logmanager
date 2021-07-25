@@ -1,17 +1,26 @@
-local serverLog = json.decode(LoadResourceFile(GetCurrentResourceName(), "log.json")) or {}
-
 RegisterNetEvent("logmanager:upload")
 
-local function addLogEntry(entry)
-	if not entry.time then
-		entry.time = os.time()
-	end
-
-	if not entry.resource then
-		entry.resource = GetCurrentResourceName()
-	end
-
-	table.insert(serverLog, entry)
+local function addLogEntry(time, resource, identifiers, playerName, message)
+	exports.ghmattimysql:execute(
+		"INSERT INTO logmanager_log (time, resource, player_name, message) VALUES (@time, @resource, @player_name, @message)",
+		{
+			["time"] = time,
+			["resource"] = resource or GetCurrentResourceName(),
+			["player_name"] = playerName,
+			["message"] = message
+		},
+		function(results)
+			if identifiers then
+				for _, identifier in ipairs(identifiers) do
+					exports.ghmattimysql:execute(
+						"INSERT INTO logmanager_log_identifier (log_id, identifier) VALUES (@log_id, @identifier)",
+						{
+							["log_id"] = results.insertId,
+							["identifier"] = identifier
+						})
+				end
+			end
+		end)
 end
 
 local function log(resource, message)
