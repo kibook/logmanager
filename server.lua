@@ -19,11 +19,15 @@ local function log(resource, message)
 end
 
 local function matchesQuery(query, entry)
-	if query.playerName and entry.playerName and string.lower(query.playerName) ~= string.lower(entry.playerName) then
+	if query.playerName and (not entry.playerName or string.lower(query.playerName) ~= string.lower(entry.playerName)) then
 		return false
 	end
 
 	if query.identifier then
+		if not entry.identifiers then
+			return false
+		end
+
 		local found = false
 
 		for _, identifier in ipairs(entry.identifiers) do
@@ -41,17 +45,23 @@ local function matchesQuery(query, entry)
 	return true
 end
 
-local function printLogEntry(entry, query)
-	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
-
-	print(("[%s][%s] %s: %s"):format(date, entry.resource, entry.playerName or "server", entry.message))
+local function formatLogEntry(entry)
+	return ("[%s][%s] %s: %s"):format(date, entry.resource, entry.playerName or "server", entry.message)
 end
 
-local function saveLog()
+local function printLogEntry(entry, query)
+	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
+	print(formatLogEntry(entry))
+end
+
+local function sortLog()
 	table.sort(serverLog, function(a, b)
 		return a.time < b.time
 	end)
+end
 
+local function saveLog()
+	sortLog()
 	SaveResourceFile(GetCurrentResourceName(), "log.json", json.encode(serverLog), -1)
 end
 
@@ -70,6 +80,23 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 
 		table.insert(serverLog, entry)
 	end
+end)
+
+AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
+	addLogEntry{
+		resource = "core",
+		identifiers = GetPlayerIdentifiers(source),
+		playerName = playerName,
+		message = "connecting"
+	}
+end)
+
+AddEventHandler("playerDropped", function(reason)
+	addLogEntry {
+		resource = "core",
+		playerName = playerName,
+		message = ("dropped (%s)"):format(reason)
+	}
 end)
 
 AddEventHandler("chatMessage", function(source, author, text)
@@ -92,6 +119,18 @@ RegisterCommand("showlogs", function(source, args, raw)
 			printLogEntry(entry, query)
 		end
 	end
+end, true)
+
+RegisterCommand("writelogs", function(source, args, raw)
+	sortLog()
+
+	local text = ""
+
+	for _, entry in ipairs(serverLog) do
+		text = text .. formatLogEntry(entry) .. "\n"
+	end
+
+	SaveResourceFile(GetCurrentResourceName(), "log.txt", text, -1)
 end, true)
 
 Citizen.CreateThread(function()
