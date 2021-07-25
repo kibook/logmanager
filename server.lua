@@ -46,11 +46,11 @@ local function matchesQuery(query, entry)
 end
 
 local function formatLogEntry(entry)
+	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
 	return ("[%s][%s] %s: %s"):format(date, entry.resource, entry.playerName or "server", entry.message)
 end
 
 local function printLogEntry(entry, query)
-	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
 	print(formatLogEntry(entry))
 end
 
@@ -130,7 +130,7 @@ RegisterCommand("writelogs", function(source, args, raw)
 		text = text .. formatLogEntry(entry) .. "\n"
 	end
 
-	SaveResourceFile(GetCurrentResourceName(), "log.txt", text, -1)
+	SaveResourceFile(GetCurrentResourceName(), args[1] or "log.txt", text, -1)
 end, true)
 
 Citizen.CreateThread(function()
