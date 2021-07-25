@@ -115,7 +115,7 @@ end)
 AddEventHandler("playerDropped", function(reason)
 	addLogEntry {
 		resource = "core",
-		playerName = playerName,
+		playerName = GetPlayerName(source),
 		message = ("dropped (%s)"):format(reason)
 	}
 end)
@@ -127,6 +127,8 @@ end)
 RegisterCommand("showlogs", function(source, args, raw)
 	local query = {}
 
+	local all = false
+
 	for i = 1, #args do
 		if args[i] == "-name" then
 			query.playerName = args[i + 1]
@@ -136,7 +138,14 @@ RegisterCommand("showlogs", function(source, args, raw)
 			query.after = stringToTime(args[i + 1])
 		elseif args[i] == "-before" then
 			query.before = stringToTime(args[i + 1])
+		elseif args[i] == "-all" then
+			all = true
 		end
+	end
+
+	if not all and not (query.after or query.before) then
+		local now = os.date("*t", os.time())
+		query.after = os.time{year = now.year, month = now.month, day = now.day}
 	end
 
 	for _, entry in ipairs(serverLog) do
