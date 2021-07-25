@@ -42,6 +42,14 @@ local function matchesQuery(query, entry)
 		end
 	end
 
+	if query.after and entry.time < query.after then
+		return false
+	end
+
+	if query.before and entry.time > query.before then
+		return false
+	end
+
 	return true
 end
 
@@ -63,6 +71,19 @@ end
 local function saveLog()
 	sortLog()
 	SaveResourceFile(GetCurrentResourceName(), "log.json", json.encode(serverLog), -1)
+end
+
+local function stringToTime(str)
+	local year, month, day, hour, min, sec = str:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+
+	return os.time {
+		year = year or 1970,
+		month = month or 1,
+		day = day or 1,
+		hour = hour or 0,
+		min = min or 0,
+		sec = sec or 0
+	}
 end
 
 exports("log", log)
@@ -111,6 +132,10 @@ RegisterCommand("showlogs", function(source, args, raw)
 			query.playerName = args[i + 1]
 		elseif args[i] == "-identifier" then
 			query.identifier = args[i + 1]
+		elseif args[i] == "-after" then
+			query.after = stringToTime(args[i + 1])
+		elseif args[i] == "-before" then
+			query.before = stringToTime(args[i + 1])
 		end
 	end
 
