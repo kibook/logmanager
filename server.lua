@@ -2,14 +2,20 @@ local serverLog = json.decode(LoadResourceFile(GetCurrentResourceName(), "log.js
 
 RegisterNetEvent("logmanager:upload")
 
-local function log(resource, message)
-	local entry = {}
+local function addLogEntry(entry)
+	if not entry.time then
+		entry.time = os.time()
+	end
 
-	entry.time = os.time()
-	entry.resource = resource or GetCurrentResourceName()
-	entry.message = message
+	if not entry.resource then
+		entry.resource = GetCurrentResourceName()
+	end
 
 	table.insert(serverLog, entry)
+end
+
+local function log(resource, message)
+	addLogEntry{resource = resource, message = message}
 end
 
 local function matchesQuery(query, entry)
@@ -64,6 +70,10 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 
 		table.insert(serverLog, entry)
 	end
+end)
+
+AddEventHandler("chatMessage", function(source, author, text)
+	addLogEntry{resource = "chat", playerName = GetPlayerName(source), message = text}
 end)
 
 RegisterCommand("showlogs", function(source, args, raw)
