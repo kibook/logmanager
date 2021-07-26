@@ -97,7 +97,7 @@ local function formatLogEntry(entry)
 	return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
 end
 
-local function printLogEntry(entry, query)
+local function printLogEntry(entry)
 	print(formatLogEntry(entry))
 end
 
@@ -198,29 +198,26 @@ local function collateLogs(fn, query, ...)
 					return a.time < b.time
 				end)
 
-				fn(entries, query, args)
+				fn(entries, args)
 			end
 		end)
 end
 
-local function forEachLogEntry(entries, query, fn)
-	for _, entry in ipairs(entries) do
-		fn(entry)
-	end
-end
-
-local function printLogEntries(entries, query)
+local function printLogEntries(entries)
 	local numEntries = #entries
 
 	if numEntries > 0 then
 		print(("Showing %d log entries from %s to %s"):format(numEntries, formatTime(entries[1].time), formatTime(entries[#entries].time)))
-		forEachLogEntry(entries, query, printLogEntry)
+
+		for _, entry in ipairs(entries) do
+			printLogEntry(entry)
+		end
 	else
 		print("No log entries found")
 	end
 end
 
-local function writeLogEntries(entries, query, name)
+local function writeLogEntries(entries, name)
 	local text = ""
 
 	for _, entry in ipairs(entries) do
