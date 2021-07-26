@@ -215,6 +215,8 @@ local function printLogEntries(entries, query)
 	if numEntries > 0 then
 		print(("Showing %d log entries from %s to %s"):format(numEntries, formatTime(entries[1].time), formatTime(entries[#entries].time)))
 		forEachLogEntry(entries, query, printLogEntry)
+	else
+		print("No log entries found")
 	end
 end
 
@@ -228,7 +230,7 @@ local function writeLogEntries(entries, query, name)
 	SaveResourceFile(GetCurrentResourceName(), name, text, -1)
 end
 
-RegisterCommand("showlogs", function(source, args, raw)
+local function buildQuery(args)
 	local query = {}
 
 	for i = 1, #args do
@@ -245,14 +247,35 @@ RegisterCommand("showlogs", function(source, args, raw)
 		end
 	end
 
-	collateLogs(printLogEntries, query)
+	return query
+end
+
+RegisterCommand("showlogs", function(source, args, raw)
+	collateLogs(printLogEntries, buildQuery(args))
 end, true)
 
 RegisterCommand("writelogs", function(source, args, raw)
 	collateLogs(writeLogEntries, {}, args[1] or "log.txt")
 end, true)
 
-exports.ghmattimysql:transaction({
+RegisterCommand("clearlogs", function(source, args, raw)
+	local query = buildQuery(args)
+
+	exports.ghmattimysql:execute(
+		[[
+		DELETE FROM
+			logmanager_log
+		WHERE
+			(@after IS NULL OR time > @after) AND
+			(@before is NULL or time < @before)
+		]],
+		{
+			["after"] = query.after,
+			["before"] = query.before
+		})
+end, true)
+
+exports.ghmattimysql:transaction {
 	[[
 	CREATE TABLE IF NOT EXISTS logmanager_log (
 		id INT NOT NULL AUTO_INCREMENT,
@@ -270,6 +293,7 @@ exports.ghmattimysql:transaction({
 		log_id INT NOT NULL,
 		identifier VARCHAR(255) NOT NULL,
 		PRIMARY KEY (id),
-		FOREIGN KEY (log_id) REFERENCES logmanager_log (id)
+		FOREIGN KEY (log_id) REFERENCES logmanager_log (id) ON DELETE CASCADE
 	)
-	]]})
+	]]
+}
