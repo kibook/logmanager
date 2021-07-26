@@ -189,7 +189,9 @@ local function collateLogs(fn, query, ...)
 				local entries = {}
 
 				for _, entry in pairs(collated) do
-					table.insert(entries, entry)
+					if matchesQuery(query, entry) then
+						table.insert(entries, entry)
+					end
 				end
 
 				table.sort(entries, function(a, b)
@@ -203,9 +205,7 @@ end
 
 local function forEachLogEntry(entries, query, fn)
 	for _, entry in ipairs(entries) do
-		if matchesQuery(query, entry) then
-			fn(entry)
-		end
+		fn(entry)
 	end
 end
 
