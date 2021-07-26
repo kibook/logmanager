@@ -119,22 +119,6 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 	end
 end)
 
---[[
-AddEventHandler("onResourceStart", function(resourceName)
-	addLogEntry {
-		resource = "core",
-		message = ("Started resource %s"):format(resourceName)
-	}
-end)
-
-AddEventHandler("onResourceStop", function(resourceName)
-	addLogEntry {
-		resource = "core",
-		message = ("Stopped resource %s"):format(resourceName)
-	}
-end)
---]]
-
 AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
 	addLogEntryForPlayer(source, {
 		resource = "core",
