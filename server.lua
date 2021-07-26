@@ -63,6 +63,10 @@ local function log(resource, message)
 end
 
 local function matchesQuery(query, entry)
+	if query.resource and (not entry.resource or string.lower(query.resource) ~= string.lower(entry.resource)) then
+		return false
+	end
+
 	if query.playerName and (not entry.playerName or string.lower(query.playerName) ~= string.lower(entry.playerName)) then
 		return false
 	end
@@ -241,6 +245,8 @@ local function buildQuery(args)
 			query.before = args[i + 1]
 		elseif args[i] == "-endpoint" then
 			query.endpoint = args[i + 1]
+		elseif args[i] == "-resource" then
+			query.resource = args[i + 1]
 		end
 	end
 
