@@ -25,19 +25,19 @@ local function addLogEntry(entry)
 		},
 		function(results)
 			if results and entry.identifiers then
+				local statements = {}
+
 				for _, identifier in ipairs(entry.identifiers) do
-					exports.ghmattimysql:execute(
-						[[
-						INSERT INTO
-							logmanager_log_identifier (log_id, identifier)
-						VALUES
-							(@log_id, @identifier)
-						]],
-						{
+					table.insert(statements, {
+						query = "INSERT INTO logmanager_log_identifier (log_id, identifier) VALUES (@log_id, @identifier)",
+						values = {
 							["log_id"] = results.insertId,
 							["identifier"] = identifier
-						})
+						}
+					})
 				end
+
+				exports.ghmattimysql:transaction(statements)
 			end
 		end)
 end
