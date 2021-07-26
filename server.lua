@@ -90,7 +90,7 @@ local function matchesQuery(query, entry)
 end
 
 local function formatTime(time)
-	return os.date("%Y-%m-%dT%H:%M:%S", time)
+	return os.date(Config.timeFormat, time)
 end
 
 local function formatLogEntry(entry)
@@ -272,7 +272,10 @@ RegisterCommand("clearlogs", function(source, args, raw)
 		{
 			["after"] = query.after,
 			["before"] = query.before
-		})
+		},
+		function(results)
+			print(("%d log entries deleted"):format(results.affectedRows))
+		end)
 end, true)
 
 exports.ghmattimysql:transaction {
