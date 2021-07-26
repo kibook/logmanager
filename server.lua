@@ -24,7 +24,7 @@ local function addLogEntry(entry)
 			["message"] = entry.message
 		},
 		function(results)
-			if results.affectedRows == 1 and entry.identifiers then
+			if results and entry.identifiers then
 				for _, identifier in ipairs(entry.identifiers) do
 					exports.ghmattimysql:execute(
 						[[
@@ -119,6 +119,7 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 	end
 end)
 
+--[[
 AddEventHandler("onResourceStart", function(resourceName)
 	addLogEntry {
 		resource = "core",
@@ -132,6 +133,7 @@ AddEventHandler("onResourceStop", function(resourceName)
 		message = ("Stopped resource %s"):format(resourceName)
 	}
 end)
+--]]
 
 AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
 	addLogEntryForPlayer(source, {
