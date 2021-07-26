@@ -10,18 +10,29 @@ local function addLogEntry(entry)
 	end
 
 	exports.ghmattimysql:execute(
-		"INSERT INTO logmanager_log (time, resource, player_name, message) VALUES (FROM_UNIXTIME(@time), @resource, @player_name, @message)",
+		[[
+		INSERT INTO
+			logmanager_log (time, resource, endpoint, player_name, message)
+		VALUES
+			(FROM_UNIXTIME(@time), @resource, @endpoint, @player_name, @message)
+		]],
 		{
 			["time"] = entry.time,
 			["resource"] = entry.resource,
+			["endpoint"] = entry.endpoint,
 			["player_name"] = entry.playerName,
 			["message"] = entry.message
 		},
 		function(results)
-			if results and entry.identifiers then
+			if results.affectedRows == 1 and entry.identifiers then
 				for _, identifier in ipairs(entry.identifiers) do
 					exports.ghmattimysql:execute(
-						"INSERT INTO logmanager_log_identifier (log_id, identifier) VALUES (@log_id, @identifier)",
+						[[
+						INSERT INTO
+							logmanager_log_identifier (log_id, identifier)
+						VALUES
+							(@log_id, @identifier)
+						]],
 						{
 							["log_id"] = results.insertId,
 							["identifier"] = identifier
@@ -29,6 +40,22 @@ local function addLogEntry(entry)
 				end
 			end
 		end)
+end
+
+local function addLogEntryForPlayer(source, entry)
+	if not entry.identifiers then
+		entry.identifiers = GetPlayerIdentifiers(source)
+	end
+
+	if not entry.endpoint then
+		entry.endpoint = GetPlayerEndpoint(source)
+	end
+
+	if not entry.playerName then
+		entry.playerName = GetPlayerName(source)
+	end
+
+	addLogEntry(entry)
 end
 
 local function log(resource, message)
@@ -62,9 +89,12 @@ local function matchesQuery(query, entry)
 	return true
 end
 
+local function formatTime(time)
+	return os.date("%Y-%m-%dT%H:%M:%S", time)
+end
+
 local function formatLogEntry(entry)
-	local date = os.date("%Y-%m-%dT%H:%M:%S", entry.time)
-	return ("[%s][%s] %s: %s"):format(date, entry.resource, entry.player_name or "server", entry.message)
+	return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
 end
 
 local function printLogEntry(entry, query)
@@ -75,11 +105,13 @@ exports("log", log)
 
 AddEventHandler("logmanager:upload", function(log, uploadTime)
 	local identifiers = GetPlayerIdentifiers(source)
+	local endpoint = GetPlayerEndpoint(source)
 	local playerName = GetPlayerName(source)
 	local currentTime = os.time()
 
 	for _, entry in ipairs(log) do
 		entry.identifiers = identifiers
+		entry.endpoint = endpoint
 		entry.playerName = playerName
 		entry.time = math.floor(currentTime - ((uploadTime - entry.time) / 1000))
 
@@ -87,51 +119,63 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 	end
 end)
 
-AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
+AddEventHandler("onResourceStart", function(resourceName)
 	addLogEntry {
 		resource = "core",
-		identifiers = GetPlayerIdentifiers(source),
+		message = ("Started resource %s"):format(resourceName)
+	}
+end)
+
+AddEventHandler("onResourceStop", function(resourceName)
+	addLogEntry {
+		resource = "core",
+		message = ("Stopped resource %s"):format(resourceName)
+	}
+end)
+
+AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
+	addLogEntryForPlayer(source, {
+		resource = "core",
 		playerName = playerName,
 		message = "connecting"
-	}
+	})
 end)
 
 AddEventHandler("playerDropped", function(reason)
-	addLogEntry {
+	addLogEntryForPlayer(source, {
 		resource = "core",
-		playerName = GetPlayerName(source),
 		message = ("dropped (%s)"):format(reason)
-	}
+	})
 end)
 
-AddEventHandler("chatMessage", function(source, author, text)
-	addLogEntry {
-		resource = "chat",
-		playerName = GetPlayerName(source),
-		message = text
-	}
-end)
+if Config.logChat then
+	AddEventHandler("chatMessage", function(source, author, text)
+		addLogEntryForPlayer(source, {
+			resource = "chat",
+			message = text
+		})
+	end)
+end
 
 local function collateLogs(fn, query, ...)
 	local args = ...
 
 	exports.ghmattimysql:execute(
-		[[SELECT
+		[[
+		SELECT
 			logmanager_log.id as id,
 			logmanager_log.time as time,
 			logmanager_log.resource as resource,
+			logmanager_log.endpoint as endpoint,
 			logmanager_log.player_name as player_name,
 			logmanager_log.message as message,
-			logmanager_log_identifier.identifier as identifie
+			logmanager_log_identifier.identifier as identifier
 		FROM
-			logmanager_log,
-			logmanager_log_identifier
+			logmanager_log LEFT OUTER JOIN logmanager_log_identifier ON logmanager_log.id = logmanager_log_identifier.log_id
 		WHERE
-			logmanager_log.id = logmanager_log_identifier.log_id AND
 			(@after IS NULL OR logmanager_log.time > @after) AND
 			(@before IS NULL OR logmanager_log.time < @before)
-		ORDER BY
-			time]],
+		]],
 		{
 			["after"] = query.after,
 			["before"] = query.before
@@ -146,6 +190,7 @@ local function collateLogs(fn, query, ...)
 
 						collated[result.id].time = result.time / 1000
 						collated[result.id].resource = result.resource
+						collated[result.id].endpoint = result.endpoint
 						collated[result.id].playerName = result.player_name
 						collated[result.id].message = result.message
 
@@ -161,6 +206,10 @@ local function collateLogs(fn, query, ...)
 					table.insert(entries, entry)
 				end
 
+				table.sort(entries, function(a, b)
+					return a.time < b.time
+				end)
+
 				fn(entries, query, args)
 			end
 		end)
@@ -175,7 +224,12 @@ local function forEachLogEntry(entries, query, fn)
 end
 
 local function printLogEntries(entries, query)
-	forEachLogEntry(entries, query, printLogEntry)
+	local numEntries = #entries
+
+	if numEntries > 0 then
+		print(("Showing %d log entries from %s to %s"):format(numEntries, formatTime(entries[1].time), formatTime(entries[#entries].time)))
+		forEachLogEntry(entries, query, printLogEntry)
+	end
 end
 
 local function writeLogEntries(entries, query, name)
@@ -200,6 +254,8 @@ RegisterCommand("showlogs", function(source, args, raw)
 			query.after = args[i + 1]
 		elseif args[i] == "-before" then
 			query.before = args[i + 1]
+		elseif args[i] == "-endpoint" then
+			query.endpoint = args[i + 1]
 		end
 	end
 
@@ -209,3 +265,25 @@ end, true)
 RegisterCommand("writelogs", function(source, args, raw)
 	collateLogs(writeLogEntries, {}, args[1] or "log.txt")
 end, true)
+
+exports.ghmattimysql:transaction({
+	[[
+	CREATE TABLE IF NOT EXISTS logmanager_log (
+		id INT NOT NULL AUTO_INCREMENT,
+		time DATETIME NOT NULL,
+		resource VARCHAR(255),
+		endpoint VARCHAR(255),
+		player_name VARCHAR(255),
+		message VARCHAR(255),
+		PRIMARY KEY (id)
+	)
+	]],
+	[[
+	CREATE TABLE IF NOT EXISTS logmanager_log_identifier (
+		id INT NOT NULL AUTO_INCREMENT,
+		log_id INT NOT NULL,
+		identifier VARCHAR(255) NOT NULL,
+		PRIMARY KEY (id),
+		FOREIGN KEY (log_id) REFERENCES logmanager_log (id)
+	)
+	]]})
