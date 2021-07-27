@@ -126,22 +126,37 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 	end
 end)
 
-AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
-	addLogEntryForPlayer(source, {
-		resource = "core",
-		playerName = playerName,
-		message = "connecting"
-	})
-end)
+if Config.events.baseevents then
+	AddEventHandler("baseevents:onPlayerDied", function(killerType, deathCoords)
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Died at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
+		})
+	end)
 
-AddEventHandler("playerDropped", function(reason)
-	addLogEntryForPlayer(source, {
-		resource = "core",
-		message = ("dropped (%s)"):format(reason)
-	})
-end)
+	AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
+		if killerId == -1 then
+			addLogEntryForPlayer(source, {
+				resource = "baseevents",
+				message = ("Was killed at (%.2f, %.2f, %.2f)"):format(deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
+			})
+		else
+			addLogEntryForPlayer(killerId, {
+				resource = "baseevents",
+				message = ("Killed %s at (%.2f, %.2f, %.2f)"):format(GetPlayerName(source), deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
+			})
+		end
+	end)
 
-if Config.logChat then
+	AddEventHandler("baseevents:onPlayerWasted", function(deathCoords)
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
+		})
+	end)
+end
+
+if Config.events.chat then
 	AddEventHandler("chatMessage", function(source, author, text)
 		addLogEntryForPlayer(source, {
 			resource = "chat",
@@ -150,33 +165,22 @@ if Config.logChat then
 	end)
 end
 
-AddEventHandler("baseevents:onPlayerDied", function(killerType, deathCoords)
-	addLogEntryForPlayer(source, {
-		resource = "baseevents",
-		message = ("Died at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
-	})
-end)
-
-AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
-	if killerId == -1 then
+if Config.events.core then
+	AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
 		addLogEntryForPlayer(source, {
-			resource = "baseevents",
-			message = ("Run over by a %s at (%.2f, %.2f, %.2f)"):format(deathData[5], deathData[6][1], deathData[6][2], deathData[6][3])
+			resource = "core",
+			playerName = playerName,
+			message = "connecting"
 		})
-	else
-		addLogEntryForPlayer(killerId, {
-			resource = "baseevents",
-			message = ("Killed %s at (%.2f, %.2f, %.2f)"):format(GetPlayerName(source), deathData[6][1], deathData[6][2], deathData[6][3])
-		})
-	end
-end)
+	end)
 
-AddEventHandler("baseevents:onPlayerWasted", function(deathCoords)
-	addLogEntryForPlayer(source, {
-		resource = "baseevents",
-		message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
-	})
-end)
+	AddEventHandler("playerDropped", function(reason)
+		addLogEntryForPlayer(source, {
+			resource = "core",
+			message = ("dropped (%s)"):format(reason)
+		})
+	end)
+end
 
 local function collateLogs(fn, query, ...)
 	local args = ...
