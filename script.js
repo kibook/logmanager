@@ -26,15 +26,15 @@ function update() {
 		let endpointMatched = endpointSelect.value == '' || endpointSelect.value == entry.endpoint;
 		let playerNameMatched = playerNameSelect.value == '' || playerNameSelect.value == entry.player_name;
 
-		if (entry.resource != '' && afterMatched && beforeMatched && endpointMatched && playerNameMatched) {
+		if (entry.resource && afterMatched && beforeMatched && endpointMatched && playerNameMatched) {
 			resources.push(entry.resource);
 		}
 
-		if (entry.endpoint != '' && afterMatched && beforeMatched && resourceMatched && playerNameMatched) {
+		if (entry.endpoint && afterMatched && beforeMatched && resourceMatched && playerNameMatched) {
 			endpoints.push(entry.endpoint);
 		}
 
-		if (entry.player_name != '' && afterMatched && beforeMatched && resourceMatched && endpointMatched) {
+		if (entry.player_name && afterMatched && beforeMatched && resourceMatched && endpointMatched) {
 			playerNames.push(entry.player_name);
 		}
 
