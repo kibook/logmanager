@@ -1,13 +1,27 @@
-.log {
+body {
+	font-family: sans-serif;
+}
+
+#filters {
+	display: grid;
+	grid-template-columns: repeat(6, max-content);
+	grid-gap: 0.5vh 0.5vw;
+	position: sticky;
+	top: 0;
+	background: white;
+	padding: 1em 0;
+}
+
+#log {
 	display: grid;
 	grid-template-columns: repeat(5, max-content);
 	grid-gap: 1vh 1vw;
 }
 
-.log-headers, .log-body, .log-entry {
+#log-headers, #log-body, .log-entry {
 	display: contents;
 }
 
-.log-headers {
+#log-headers {
 	font-weight: bold;
 }
