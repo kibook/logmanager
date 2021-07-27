@@ -43,11 +43,21 @@ SELECT
 	message
 FROM
 	logmanager_log
+WHERE
+	(? IS NULL OR time < ?) AND
+	(? IS NULL OR time > ?) AND
+	(? IS NULL OR resource = ?) AND
+	(? IS NULL OR endpoint = ?) AND
+	(? IS NULL OR player_name = ?)
 ORDER BY
 	time
 SQL;
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ssssssssss", $after, $after, $before, $before, $resource, $resource, $endpoint, $endpoint, $player_name, $player_name);
+$stmt->execute();
+
+$result = $stmt->get_result();
 
 $rows = array();
 
@@ -128,18 +138,6 @@ foreach ($player_names as $p) {
 <?php
 
 foreach ($rows as $row) {
-	if (isset($resource) && $resource != $row['resource']) {
-		continue;
-	}
-
-	if (isset($endpoint) && $endpoint != $row['endpoint']) {
-		continue;
-	}
-
-	if (isset($player_name) && $player_name != $row['player_name']) {
-		continue;
-	}
-
 	echo '<div class="log-entry">';
 	echo '<div>' . $row['time'] . '</div>';
 	echo '<div>' . $row['resource'] . '</div>';
