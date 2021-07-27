@@ -67,9 +67,18 @@ $player_names = array();
 
 while ($row = $result->fetch_assoc()) {
 	array_push($rows, $row);
-	array_push($resources, $row['resource']);
-	array_push($endpoints, $row['endpoint']);
-	array_push($player_names, $row['player_name']);
+
+	if (!empty($row['resource'])) {
+		array_push($resources, $row['resource']);
+	}
+
+	if (!empty($row['endpoint'])) {
+		array_push($endpoints, $row['endpoint']);
+	}
+
+	if (!empty($row['player_name'])) {
+		array_push($player_names, $row['player_name']);
+	}
 }
 ?>
 <form>
