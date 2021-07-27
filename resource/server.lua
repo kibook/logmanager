@@ -161,7 +161,7 @@ AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
 	if killerId == -1 then
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
-			message = ("Run over by a %s at (%.2f, %.2f, %.2f)"):format(deatData[5], deathData[6][1], deathData[6][2], deathData[6][3])
+			message = ("Run over by a %s at (%.2f, %.2f, %.2f)"):format(deathData[5], deathData[6][1], deathData[6][2], deathData[6][3])
 		})
 	else
 		addLogEntryForPlayer(killerId, {
