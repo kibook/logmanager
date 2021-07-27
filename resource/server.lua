@@ -1,4 +1,7 @@
 RegisterNetEvent("logmanager:upload")
+RegisterNetEvent("baseevents:onPlayerDied")
+RegisterNetEvent("baseevents:onPlayerKilled")
+RegisterNetEvent("baseevents:onPlayerWasted")
 
 local function addLogEntry(entry)
 	if not entry.time then
@@ -146,6 +149,34 @@ if Config.logChat then
 		})
 	end)
 end
+
+AddEventHandler("baseevents:onPlayerDied", function(killerType, deathCoords)
+	addLogEntryForPlayer(source, {
+		resource = "baseevents",
+		message = ("Died at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
+	})
+end)
+
+AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
+	if killerId == -1 then
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Run over by a %s at (%.2f, %.2f, %.2f)"):format(deatData[5], deathData[6][1], deathData[6][2], deathData[6][3])
+		})
+	else
+		addLogEntryForPlayer(killerId, {
+			resource = "baseevents",
+			message = ("Killed %s at (%.2f, %.2f, %.2f)"):format(GetPlayerName(source), deathData[6][1], deathData[6][2], deathData[6][3])
+		})
+	end
+end)
+
+AddEventHandler("baseevents:onPlayerWasted", function(deathCoords)
+	addLogEntryForPlayer(source, {
+		resource = "baseevents",
+		message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
+	})
+end)
 
 local function collateLogs(fn, query, ...)
 	local args = ...

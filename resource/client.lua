@@ -1,13 +1,22 @@
 local clientLog = {}
 
-local function log(resource, message)
-	local entry = {}
+local function addLogEntry(entry)
+	if not entry.time then
+		entry.time = GetGameTimer()
+	end
 
-	entry.time = GetGameTimer()
-	entry.resource = resource or GetCurrentResourceName()
-	entry.message = message
+	if not entry.resource then
+		entry.resource = GetCurrentResourceName()
+	end
 
 	table.insert(clientLog, entry)
+end
+
+local function log(resource, message)
+	addLogEntry {
+		resource = resource,
+		message = message
+	}
 end
 
 local function uploadLog()
