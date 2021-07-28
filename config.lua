@@ -22,7 +22,7 @@ Config.events = {
 	},
 	core = {
 		playerConnecting = true,
-		platerDropped = true
+		playerDropped = true
 	},
 	spawnmanager = {
 		playerSpawned = true
