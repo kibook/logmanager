@@ -2,6 +2,10 @@ RegisterNetEvent("logmanager:upload")
 RegisterNetEvent("baseevents:onPlayerDied")
 RegisterNetEvent("baseevents:onPlayerKilled")
 RegisterNetEvent("baseevents:onPlayerWasted")
+RegisterNetEvent("baseevents:enteringVehicle")
+RegisterNetEvent("baseevents:enteringAborted")
+RegisterNetEvent("baseevents:enteredVehicle")
+RegisterNetEvent("baseevents:leftVehicle")
 
 local function addLogEntry(entry)
 	if not entry.time then
@@ -152,6 +156,34 @@ if Config.events.baseevents then
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
+		})
+	end)
+
+	AddEventHandler("baseevents:enteringVehicle", function(targetVehicle, vehicleSeat, vehicleDisplayName)
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Entering seat %d of %s %d"):format(vehicleSeat, vehicleDisplayName, targetVehicle)
+		})
+	end)
+
+	AddEventHandler("baseevents:enteringAborted", function()
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = "Aborted entering vehicle"
+		})
+	end)
+
+	AddEventHandler("baseevents:enteredVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Entered seat %d of %s %d"):format(currentSeat, vehicleDisplayName, currentVehicle)
+		})
+	end)
+
+	AddEventHandler("baseevents:leftVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
+		addLogEntryForPlayer(source, {
+			resource = "baseevents",
+			message = ("Exited seat %d of %s %d"):format(currentSeat, vehicleDisplayName, currentVehicle)
 		})
 	end)
 end
