@@ -26,6 +26,12 @@ end
 
 exports("log", log)
 
+if Config.events.spawnmanager then
+	AddEventHandler("playerSpawned", function(spawnInfo)
+		exports.logmanager:log("spawnmanager", ("Spawned at (%.2f, %.2f, %.2f)"):format(spawnInfo.x, spawnInfo.y, spawnInfo.z))
+	end)
+end
+
 Citizen.CreateThread(function()
 	while true do
 		uploadLog()

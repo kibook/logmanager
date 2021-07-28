@@ -10,5 +10,6 @@ Config.timeFormat = "%Y-%m-%dT%H:%M:%S"
 Config.events = {
 	baseevents = true,
 	chat = true,
-	core = true
+	core = true,
+	spawnmanager = true
 }
