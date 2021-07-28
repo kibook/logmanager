@@ -26,7 +26,7 @@ end
 
 exports("log", log)
 
-if Config.events.spawnmanager then
+if Config.events.spawnmanager.playerSpawned then
 	AddEventHandler("playerSpawned", function(spawnInfo)
 		exports.logmanager:log("spawnmanager", ("Spawned at (%.2f, %.2f, %.2f)"):format(spawnInfo.x, spawnInfo.y, spawnInfo.z))
 	end)

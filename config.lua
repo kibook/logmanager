@@ -8,8 +8,23 @@ Config.timeFormat = "%Y-%m-%dT%H:%M:%S"
 
 -- Customize which standard events to log
 Config.events = {
-	baseevents = true,
-	chat = true,
-	core = true,
-	spawnmanager = true
+	baseevents = {
+		onPlayerDied = true,
+		onPlayerKilled = true,
+		onPlayerWasted = true,
+		enteringVehicle = true,
+		enteringAborted = true,
+		enteredVehicle = true,
+		leftVehicle = true
+	},
+	chat = {
+		chatMessage = true
+	},
+	core = {
+		playerConnecting = true,
+		platerDropped = true
+	},
+	spawnmanager = {
+		playerSpawned = true
+	}
 }

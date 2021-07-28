@@ -130,14 +130,16 @@ AddEventHandler("logmanager:upload", function(log, uploadTime)
 	end
 end)
 
-if Config.events.baseevents then
+if Config.events.baseevents.onPlayerDied then
 	AddEventHandler("baseevents:onPlayerDied", function(killerType, deathCoords)
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = ("Died at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
 		})
 	end)
+end
 
+if Config.events.baseevents.onPlayerKilled then
 	AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
 		if killerId == -1 then
 			addLogEntryForPlayer(source, {
@@ -151,35 +153,45 @@ if Config.events.baseevents then
 			})
 		end
 	end)
+end
 
+if Config.events.baseevents.onPlayerWasted then
 	AddEventHandler("baseevents:onPlayerWasted", function(deathCoords)
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
 		})
 	end)
+end
 
+if Config.events.baseevents.enteringVehicle then
 	AddEventHandler("baseevents:enteringVehicle", function(targetVehicle, vehicleSeat, vehicleDisplayName)
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = ("Entering seat %d of %s %d"):format(vehicleSeat, vehicleDisplayName, targetVehicle)
 		})
 	end)
+end
 
+if Config.events.baseevents.enteringAborted then
 	AddEventHandler("baseevents:enteringAborted", function()
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = "Aborted entering vehicle"
 		})
 	end)
+end
 
+if Config.events.baseevents.enteredVehicle then
 	AddEventHandler("baseevents:enteredVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
 			message = ("Entered seat %d of %s %d"):format(currentSeat, vehicleDisplayName, currentVehicle)
 		})
 	end)
+end
 
+if Config.events.baseevents.leftVehicle then
 	AddEventHandler("baseevents:leftVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
 		addLogEntryForPlayer(source, {
 			resource = "baseevents",
@@ -188,7 +200,7 @@ if Config.events.baseevents then
 	end)
 end
 
-if Config.events.chat then
+if Config.events.chat.chatMessage then
 	AddEventHandler("chatMessage", function(source, author, text)
 		addLogEntryForPlayer(source, {
 			resource = "chat",
@@ -197,7 +209,7 @@ if Config.events.chat then
 	end)
 end
 
-if Config.events.core then
+if Config.events.core.playerConnecting then
 	AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
 		addLogEntryForPlayer(source, {
 			resource = "core",
@@ -205,7 +217,9 @@ if Config.events.core then
 			message = "connecting"
 		})
 	end)
+end
 
+if Config.events.core.playerDropped then
 	AddEventHandler("playerDropped", function(reason)
 		addLogEntryForPlayer(source, {
 			resource = "core",
