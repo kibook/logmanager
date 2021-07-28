@@ -282,14 +282,35 @@ local function buildQuery(args)
 			query.endpoint = args[i + 1]
 		elseif args[i] == "-resource" then
 			query.resource = args[i + 1]
+		elseif args[i] == "-all" then
+			query.all = true
 		end
 	end
 
 	return query
 end
 
+local function getCurrentDay()
+	local now = os.date("*t", os.time())
+
+	return os.time {
+		year = now.year,
+		month = now.month,
+		day = now.day,
+		hour = 0,
+		min = 0,
+		sec = 0
+	}
+end
+
 RegisterCommand("showlogs", function(source, args, raw)
-	collateLogs(printLogEntries, buildQuery(args))
+	local query = buildQuery(args)
+
+	if not (query.all or query.after or query.before) then
+		query.after = formatTime(getCurrentDay())
+	end
+
+	collateLogs(printLogEntries, query)
 end, true)
 
 RegisterCommand("writelogs", function(source, args, raw)
