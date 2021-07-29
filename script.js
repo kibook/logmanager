@@ -126,6 +126,13 @@ function refresh() {
 }
 
 window.addEventListener('load', function(event) {
+	let now = new Date();
+	let year = now.getFullYear();
+	let month = (now.getMonth() + 1).toString().padStart(2, '0');
+	let day = now.getDate().toString().padStart(2, '0');
+
+	document.getElementById('after').value = `${year}-${month}-${day}`;
+
 	refresh();
 
 	document.querySelectorAll('.update').forEach(e => e.addEventListener('input', function(event) {
