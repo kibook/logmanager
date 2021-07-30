@@ -7,7 +7,7 @@ RegisterNetEvent("baseevents:enteringAborted")
 RegisterNetEvent("baseevents:enteredVehicle")
 RegisterNetEvent("baseevents:leftVehicle")
 
-local function addLogEntry(entry)
+local function log(entry)
 	if not entry.time then
 		entry.time = os.time()
 	end
@@ -16,19 +16,36 @@ local function addLogEntry(entry)
 		entry.resource = GetCurrentResourceName()
 	end
 
+	if entry.player then
+		if not entry.identifiers then
+			entry.identifiers = GetPlayerIdentifiers(entry.player)
+		end
+
+		if not entry.endpoint then
+			entry.endpoint = GetPlayerEndpoint(entry.player)
+		end
+
+		if not entry.playerName then
+			entry.playerName = GetPlayerName(entry.player)
+		end
+	end
+
 	exports.ghmattimysql:execute(
 		[[
 		INSERT INTO
-			logmanager_log (time, resource, endpoint, player_name, message)
+			logmanager_log (time, resource, endpoint, player_name, message, coords_x, coords_y, coords_z)
 		VALUES
-			(FROM_UNIXTIME(@time), @resource, @endpoint, @player_name, @message)
+			(FROM_UNIXTIME(@time), @resource, @endpoint, @player_name, @message, @coords_x, @coords_y, @coords_z)
 		]],
 		{
 			["time"] = entry.time,
 			["resource"] = entry.resource,
 			["endpoint"] = entry.endpoint,
 			["player_name"] = entry.playerName,
-			["message"] = entry.message
+			["message"] = entry.message,
+			["coords_x"] = entry.coords and entry.coords.x,
+			["coords_y"] = entry.coords and entry.coords.y,
+			["coords_z"] = entry.coords and entry.coords.z
 		},
 		function(results)
 			if results and entry.identifiers then
@@ -47,26 +64,6 @@ local function addLogEntry(entry)
 				exports.ghmattimysql:transaction(statements)
 			end
 		end)
-end
-
-local function addLogEntryForPlayer(source, entry)
-	if not entry.identifiers then
-		entry.identifiers = GetPlayerIdentifiers(source)
-	end
-
-	if not entry.endpoint then
-		entry.endpoint = GetPlayerEndpoint(source)
-	end
-
-	if not entry.playerName then
-		entry.playerName = GetPlayerName(source)
-	end
-
-	addLogEntry(entry)
-end
-
-local function log(resource, message)
-	addLogEntry{resource = resource, message = message}
 end
 
 local function matchesQuery(query, entry)
@@ -105,7 +102,11 @@ local function formatTime(time)
 end
 
 local function formatLogEntry(entry)
-	return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
+	if entry.coords then
+		return ("[%s][%s] %s: %s at (%.2f, %.2f, %.2f)"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message, entry.coords.x, entry.coords.y, entry.coords.z)
+	else
+		return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
+	end
 end
 
 local function printLogEntry(entry)
@@ -114,117 +115,132 @@ end
 
 exports("log", log)
 
-AddEventHandler("logmanager:upload", function(log, uploadTime)
+AddEventHandler("logmanager:upload", function(clientLog, uploadTime)
 	local identifiers = GetPlayerIdentifiers(source)
 	local endpoint = GetPlayerEndpoint(source)
 	local playerName = GetPlayerName(source)
 	local currentTime = os.time()
 
-	for _, entry in ipairs(log) do
+	for _, entry in ipairs(clientLog) do
 		entry.identifiers = identifiers
 		entry.endpoint = endpoint
 		entry.playerName = playerName
 		entry.time = math.floor(currentTime - ((uploadTime - entry.time) / 1000))
 
-		addLogEntry(entry)
+		log(entry)
 	end
 end)
 
 if Config.events.baseevents.onPlayerDied then
 	AddEventHandler("baseevents:onPlayerDied", function(killerType, deathCoords)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
-			message = ("Died at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
-		})
+			player = source,
+			message = "Died",
+			coords = vector3(deathCoords[1], deathCoords[2], deathCoords[3])
+		}
 	end)
 end
 
 if Config.events.baseevents.onPlayerKilled then
 	AddEventHandler("baseevents:onPlayerKilled", function(killerId, deathData)
 		if killerId == -1 then
-			addLogEntryForPlayer(source, {
+			log {
 				resource = "baseevents",
-				message = ("Was killed at (%.2f, %.2f, %.2f)"):format(deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
-			})
+				player = source,
+				message = "Was killed",
+				coords = vector3(deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
+			}
 		else
-			addLogEntryForPlayer(killerId, {
+			log {
 				resource = "baseevents",
-				message = ("Killed %s at (%.2f, %.2f, %.2f)"):format(GetPlayerName(source), deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
-			})
+				player = killerId,
+				message = ("Killed %s"):format(GetPlayerName(source)),
+				coords = vector3(deathData.killerpos[1], deathData.killerpos[2], deathData.killerpos[3])
+			}
 		end
 	end)
 end
 
 if Config.events.baseevents.onPlayerWasted then
 	AddEventHandler("baseevents:onPlayerWasted", function(deathCoords)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
-			message = ("Wasted at (%.2f, %.2f, %.2f)"):format(deathCoords[1], deathCoords[2], deathCoords[3])
-		})
+			player = source,
+			message = "Wasted",
+			coords = vector3(deathCoords[1], deathCoords[2], deathCoords[3])
+		}
 	end)
 end
 
 if Config.events.baseevents.enteringVehicle then
 	AddEventHandler("baseevents:enteringVehicle", function(targetVehicle, vehicleSeat, vehicleDisplayName)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
+			player = source,
 			message = ("Entering seat %d of %s %d"):format(vehicleSeat, vehicleDisplayName, targetVehicle)
-		})
+		}
 	end)
 end
 
 if Config.events.baseevents.enteringAborted then
 	AddEventHandler("baseevents:enteringAborted", function()
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
+			player = source,
 			message = "Aborted entering vehicle"
-		})
+		}
 	end)
 end
 
 if Config.events.baseevents.enteredVehicle then
 	AddEventHandler("baseevents:enteredVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
+			player = source,
 			message = ("Entered seat %d of %s %d"):format(currentSeat, vehicleDisplayName, currentVehicle)
-		})
+		}
 	end)
 end
 
 if Config.events.baseevents.leftVehicle then
 	AddEventHandler("baseevents:leftVehicle", function(currentVehicle, currentSeat, vehicleDisplayName)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "baseevents",
+			player = source,
 			message = ("Exited seat %d of %s %d"):format(currentSeat, vehicleDisplayName, currentVehicle)
-		})
+		}
 	end)
 end
 
 if Config.events.chat.chatMessage then
 	AddEventHandler("chatMessage", function(source, author, text)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "chat",
+			player = source,
 			message = text
-		})
+		}
 	end)
 end
 
 if Config.events.core.playerConnecting then
 	AddEventHandler("playerConnecting", function(playerName, setKickReason, deferrals)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "core",
+			player = source,
 			playerName = playerName,
 			message = "connecting"
-		})
+		}
 	end)
 end
 
 if Config.events.core.playerDropped then
 	AddEventHandler("playerDropped", function(reason)
-		addLogEntryForPlayer(source, {
+		log {
 			resource = "core",
+			player = source,
 			message = ("dropped (%s)"):format(reason)
-		})
+		}
 	end)
 end
 
@@ -240,6 +256,9 @@ local function collateLogs(fn, query, ...)
 			logmanager_log.endpoint as endpoint,
 			logmanager_log.player_name as player_name,
 			logmanager_log.message as message,
+			logmanager_log.coords_x as coords_x,
+			logmanager_log.coords_y as coords_y,
+			logmanager_log.coords_z as coords_z,
 			logmanager_log_identifier.identifier as identifier
 		FROM
 			logmanager_log LEFT OUTER JOIN logmanager_log_identifier ON logmanager_log.id = logmanager_log_identifier.log_id
@@ -264,6 +283,10 @@ local function collateLogs(fn, query, ...)
 						collated[result.id].endpoint = result.endpoint
 						collated[result.id].playerName = result.player_name
 						collated[result.id].message = result.message
+
+						if result.coords_x and result.coords_y and result.coords_z then
+							collated[result.id].coords = vector3(result.coords_x, result.coords_x, result.coords_z)
+						end
 
 						collated[result.id].identifiers = {}
 					end
@@ -392,6 +415,9 @@ exports.ghmattimysql:transaction {
 		endpoint VARCHAR(255),
 		player_name VARCHAR(255),
 		message VARCHAR(255),
+		coords_x FLOAT,
+		coords_y FLOAT,
+		coords_z FLOAT,
 		PRIMARY KEY (id)
 	)
 	]],

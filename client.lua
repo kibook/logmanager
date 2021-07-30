@@ -1,6 +1,6 @@
 local clientLog = {}
 
-local function addLogEntry(entry)
+local function log(entry)
 	if not entry.time then
 		entry.time = GetGameTimer()
 	end
@@ -12,13 +12,6 @@ local function addLogEntry(entry)
 	table.insert(clientLog, entry)
 end
 
-local function log(resource, message)
-	addLogEntry {
-		resource = resource,
-		message = message
-	}
-end
-
 local function uploadLog()
 	TriggerServerEvent("logmanager:upload", clientLog, GetGameTimer())
 	clientLog = {}
@@ -28,7 +21,11 @@ exports("log", log)
 
 if Config.events.spawnmanager.playerSpawned then
 	AddEventHandler("playerSpawned", function(spawnInfo)
-		exports.logmanager:log("spawnmanager", ("Spawned at (%.2f, %.2f, %.2f)"):format(spawnInfo.x, spawnInfo.y, spawnInfo.z))
+		log {
+			resource = "spawnmanager",
+			message = "Spawned",
+			coords = vector3(spawnInfo.x, spawnInfo.y, spawnInfo.z)
+		}
 	end)
 end
 
