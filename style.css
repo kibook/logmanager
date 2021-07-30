@@ -4,7 +4,7 @@ body {
 
 #filters {
 	display: grid;
-	grid-template-columns: repeat(6, max-content);
+	grid-template-columns: repeat(5, max-content);
 	grid-gap: 0.5vh 0.5vw;
 	position: sticky;
 	top: 0;

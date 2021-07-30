@@ -5,15 +5,15 @@ function update() {
 	let endpoints = [];
 	let playerNames = [];
 
-	let afterInput = document.getElementById('after');
-	let beforeInput = document.getElementById('before');
+	let dateInput = document.getElementById('date');
 	let resourceSelect = document.getElementById('resource');
 	let endpointSelect = document.getElementById('endpoint');
 	let playerNameSelect = document.getElementById('playerName');
 	let logBody = document.getElementById('log-body');
 
-	let after = new Date(afterInput.value + ' 00:00:00');
-	let before = new Date(beforeInput.value + ' 00:00:00');
+	let after = new Date(dateInput.value + ' 00:00:00');
+	let before = new Date(dateInput.value + ' 00:00:00');
+	before.setDate(before.getDate() + 1);
 
 	logBody.innerHTML = '';
 
@@ -131,7 +131,7 @@ window.addEventListener('load', function(event) {
 	let month = (now.getMonth() + 1).toString().padStart(2, '0');
 	let day = now.getDate().toString().padStart(2, '0');
 
-	document.getElementById('after').value = `${year}-${month}-${day}`;
+	document.getElementById('date').value = `${year}-${month}-${day}`;
 
 	refresh();
 
