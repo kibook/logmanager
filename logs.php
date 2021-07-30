@@ -17,7 +17,10 @@ SELECT
 	resource,
 	endpoint,
 	player_name,
-	message
+	message,
+	coords_x,
+	coords_y,
+	coords_z
 FROM
 	logmanager_log
 ORDER BY

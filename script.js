@@ -60,11 +60,21 @@ function update() {
 		let messageDiv = document.createElement('div');
 		messageDiv.innerHTML = entry.message;
 
+		let coordsDiv = document.createElement('div');
+		if (entry.coords_x && entry.coords_y && entry.coords_z) {
+			let x = parseFloat(entry.coords_x).toFixed(2);
+			let y = parseFloat(entry.coords_y).toFixed(2);
+			let z = parseFloat(entry.coords_z).toFixed(2);
+
+			coordsDiv.innerHTML = `${x}, ${y}, ${z}`;
+		}
+
 		entryDiv.appendChild(timeDiv);
 		entryDiv.appendChild(resourceDiv);
 		entryDiv.appendChild(endpointDiv);
 		entryDiv.appendChild(playerNameDiv);
 		entryDiv.appendChild(messageDiv);
+		entryDiv.appendChild(coordsDiv);
 
 		logBody.appendChild(entryDiv);
 	});
