@@ -67,6 +67,8 @@ function update() {
 			let z = parseFloat(entry.coords_z).toFixed(2);
 
 			coordsDiv.innerHTML = `${x}, ${y}, ${z}`;
+		} else {
+			coordsDiv.innerHTML = '-';
 		}
 
 		entryDiv.appendChild(timeDiv);
