@@ -1,3 +1,5 @@
+const mapUrl = null;
+
 let logs;
 
 function update() {
@@ -66,7 +68,15 @@ function update() {
 			let y = parseFloat(entry.coords_y).toFixed(2);
 			let z = parseFloat(entry.coords_z).toFixed(2);
 
-			coordsDiv.innerHTML = `${x}, ${y}, ${z}`;
+			if (mapUrl) {
+				let a = document.createElement('a');
+				a.href = `${mapUrl}?x=${x}&y=${y}&z=${z}`;
+				a.target = '_blank';
+				a.innerHTML = `(${x}, ${y}, ${z})`;
+				coordsDiv.appendChild(a);
+			} else {
+				coordsDiv.innerHTML += `(${x}, ${y}, ${z})`;
+			}
 		} else {
 			coordsDiv.innerHTML = '-';
 		}
