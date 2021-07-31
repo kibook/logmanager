@@ -2,13 +2,17 @@
 
 #filters {
 	display: grid;
-	grid-template-columns: repeat(5, minmax(0, max-content));
+	grid-template-columns: repeat(4, minmax(0, max-content)) auto;
 	grid-gap: 0.5vh 0.5vw;
 	align-items: end;
 	position: sticky;
 	top: 0;
 	background: #375a7f;
 	padding: 1em 0.5em;;
+}
+
+#refresh-container {
+	text-align: right;
 }
 
 #log {
