@@ -6,7 +6,7 @@ local function log(entry)
 	end
 
 	if not entry.resource then
-		entry.resource = GetCurrentResourceName()
+		entry.resource = GetInvokingResource() or GetCurrentResourceName()
 	end
 
 	table.insert(clientLog, entry)
