@@ -2,6 +2,18 @@ const mapUrl = null;
 
 let logs;
 
+function timeToString(date) {
+	let year = date.getFullYear().toString();
+	let month = (date.getMonth() + 1).toString().padStart(2, '0');
+	let day = date.getDate().toString().padStart(2, '0');
+
+	let hour = date.getHours().toString().padStart(2, '0');
+	let min = date.getMinutes().toString().padStart(2, '0');
+	let sec = date.getSeconds().toString().padStart(2, '0');
+
+	return `${year}-${month}-${day} ${hour}:${min}:${sec}`
+}
+
 function update() {
 	let resources = [];
 	let endpoints = [];
@@ -48,7 +60,7 @@ function update() {
 		entryDiv.className = 'log-entry';
 
 		let timeDiv = document.createElement('div');
-		timeDiv.innerHTML = entry.time;
+		timeDiv.innerHTML = timeToString(time);
 
 		let resourceDiv = document.createElement('div');
 		resourceDiv.innerHTML = entry.resource;
