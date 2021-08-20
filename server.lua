@@ -454,8 +454,7 @@ routes["/logs.json"] = function(req, res, helpers)
 		{},
 		function(results)
 			if results then
-				res.writeHead(200, {["Content-Type"] = "application/json"})
-				res.send(json.encode(results))
+				res.sendJson(results)
 			else
 				res.sendError(500)
 			end
