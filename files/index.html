@@ -1,0 +1,43 @@
+<html>
+	<head>
+		<title>logmanager</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<link rel="stylesheet" href="style.css">
+		<script src="script.js"></script>
+	</head>
+	<body>
+		<div id="filters">
+			<div>
+				<span>Date:</span>
+				<input id="date" type="date" class="update">
+			</div>
+			<div>
+				<span>Resource:</span>
+				<select id="resource" class="update"></select>
+			</div>
+			<div>
+				<span>Endpoint:</span>
+				<select id="endpoint" class="update"></select>
+			</div>
+			<div>
+				<span>Player name:</span>
+				<select id="playerName" class="update"></select>
+			</div>
+			<div id="refresh-container">
+				<button id="refresh" class="btn btn-light">Refresh</button>
+			</div>
+		</div>
+		<div id="log">
+			<div id="log-headers">
+				<div>Time</div>
+				<div>Resource</div>
+				<div>Endpoint</div>
+				<div>Player name</div>
+				<div>Message</div>
+				<div>Coordinates</div>
+			</div>
+			<div id="log-body"></div>
+		</div>
+	</body>
+</html>

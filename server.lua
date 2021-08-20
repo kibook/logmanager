@@ -431,3 +431,38 @@ exports.ghmattimysql:transaction {
 	)
 	]]
 }
+
+local routes = {}
+
+routes["/logs.json"] = function(req, res, helpers)
+	exports.ghmattimysql:execute(
+		[[
+		SELECT
+			time,
+			resource,
+			endpoint,
+			player_name,
+			message,
+			coords_x,
+			coords_y,
+			coords_z
+		FROM
+			logmanager_log
+		ORDER BY
+			time
+		]],
+		{},
+		function(results)
+			if results then
+				res.writeHead(200, {["Content-Type"] = "application/json"})
+				res.send(json.encode(results))
+			else
+				res.sendError(500)
+			end
+		end)
+end
+
+SetHttpHandler(exports.httpmanager:createHttpHandler {
+	authorization = Users,
+	routes = routes
+})
