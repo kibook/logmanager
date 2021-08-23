@@ -153,7 +153,17 @@ function update() {
 }
 
 function refresh() {
-	fetch('logs.json').then(resp => resp.json()).then(resp => {
+	let date = document.getElementById('date').value;
+
+	fetch('logs.json', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			date: date
+		})
+	}).then(resp => resp.json()).then(resp => {
 		logs = resp;
 		update();
 	});
@@ -168,6 +178,10 @@ window.addEventListener('load', function(event) {
 	document.getElementById('date').value = `${year}-${month}-${day}`;
 
 	refresh();
+
+	document.getElementById('date').addEventListener('input', function(e) {
+		refresh();
+	});
 
 	document.querySelectorAll('.update').forEach(e => e.addEventListener('input', function(event) {
 		update();
