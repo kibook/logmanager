@@ -7,6 +7,22 @@ RegisterNetEvent("baseevents:enteringAborted")
 RegisterNetEvent("baseevents:enteredVehicle")
 RegisterNetEvent("baseevents:leftVehicle")
 
+local function formatTime(time)
+	return os.date(Config.timeFormat, time)
+end
+
+local function formatLogEntry(entry)
+	if entry.coords then
+		return ("[%s][%s] %s: %s at (%.2f, %.2f, %.2f)"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message, entry.coords.x, entry.coords.y, entry.coords.z)
+	else
+		return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
+	end
+end
+
+local function printLogEntry(entry)
+	print(formatLogEntry(entry))
+end
+
 local function log(entry)
 	if not entry.time then
 		entry.time = os.time()
@@ -64,6 +80,22 @@ local function log(entry)
 				exports.ghmattimysql:transaction(statements)
 			end
 		end)
+
+	if Config.webhook then
+		local data = {
+			content = formatLogEntry(entry)
+		}
+
+		PerformHttpRequest(Config.webhook,
+			function(status, text, headers)
+				if status < 200 or status > 299 then
+					print(("Error posting to Discord: %d \"%s\" %s"):format(status, text or "", json.encode(headers)))
+				end
+			end,
+			"POST",
+			json.encode(data),
+			{["Content-Type"] = "application/json"})
+	end
 end
 
 local function matchesQuery(query, entry)
@@ -95,22 +127,6 @@ local function matchesQuery(query, entry)
 	end
 
 	return true
-end
-
-local function formatTime(time)
-	return os.date(Config.timeFormat, time)
-end
-
-local function formatLogEntry(entry)
-	if entry.coords then
-		return ("[%s][%s] %s: %s at (%.2f, %.2f, %.2f)"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message, entry.coords.x, entry.coords.y, entry.coords.z)
-	else
-		return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
-	end
-end
-
-local function printLogEntry(entry)
-	print(formatLogEntry(entry))
 end
 
 exports("log", log)

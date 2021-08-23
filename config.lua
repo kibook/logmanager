@@ -28,3 +28,6 @@ Config.events = {
 		playerSpawned = true
 	}
 }
+
+-- Discord webhook to post log messages to
+--Config.webhook = ""
