@@ -137,12 +137,20 @@ AddEventHandler("logmanager:upload", function(clientLog, uploadTime)
 	local playerName = GetPlayerName(source)
 	local currentTime = os.time()
 
+	local entries = {}
+
 	for _, entry in ipairs(clientLog) do
 		entry.identifiers = identifiers
 		entry.endpoint = endpoint
 		entry.playerName = playerName
 		entry.time = math.floor(currentTime - ((uploadTime - entry.time) / 1000))
 
+		table.insert(entries, entry)
+	end
+
+	table.sort(entries, function(a, b) return a.time < b.time end)
+
+	for _, entry in ipairs(entries) do
 		log(entry)
 	end
 end)
