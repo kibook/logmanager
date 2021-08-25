@@ -31,3 +31,6 @@ Config.events = {
 
 -- Discord webhook to post log messages to
 --Config.webhook = ""
+
+-- Rate limit for Discord messages in milliseconds
+Config.rateLimit = 1000

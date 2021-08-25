@@ -82,19 +82,7 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		local data = {
-			content = formatLogEntry(entry)
-		}
-
-		PerformHttpRequest(Config.webhook,
-			function(status, text, headers)
-				if status < 200 or status > 299 then
-					print(("Error posting to Discord: %d \"%s\" %s"):format(status, text or "", json.encode(headers)))
-				end
-			end,
-			"POST",
-			json.encode(data),
-			{["Content-Type"] = "application/json"})
+		webhook:execute{content = formatLogEntry(entry)}
 	end
 end
 
@@ -495,3 +483,7 @@ SetHttpHandler(exports.httpmanager:createHttpHandler {
 	authorization = Users,
 	routes = routes
 })
+
+if Config.webhook then
+	webhook:init(Config.webhook, Config.rateLimit)
+end

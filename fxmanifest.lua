@@ -8,6 +8,7 @@ shared_script "config.lua"
 
 server_scripts {
 	"users.lua",
+	"webhook.lua",
 	"server.lua"
 }
 
