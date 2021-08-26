@@ -479,8 +479,8 @@ routes["/logs.json"] = function(req, res, helpers)
 	end)
 end
 
-SetHttpHandler(exports.httpmanager:createHttpHandler {
-	authorization = Users,
+SetHttpHandler(exports.httpmanager:createHttpHandler{
+	authorization = Config.authorization,
 	routes = routes
 })
 
