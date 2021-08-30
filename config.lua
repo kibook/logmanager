@@ -32,8 +32,5 @@ Config.events = {
 -- Discord webhook to post log messages to
 --Config.webhook = ""
 
--- Rate limit for Discord messages in milliseconds
-Config.rateLimit = 1000
-
 -- Realm or user list for HTTP handler authorization
 Config.authorization = "default"

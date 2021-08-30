@@ -485,5 +485,5 @@ SetHttpHandler(exports.httpmanager:createHttpHandler{
 })
 
 if Config.webhook then
-	webhook:init(Config.webhook, Config.rateLimit)
+	webhook:init(Config.webhook)
 end
