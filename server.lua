@@ -82,7 +82,7 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		webhook:execute{content = formatLogEntry(entry)}
+		exports.discord_rest:executeWebhook(Config.webhook, {content = formatLogEntry(entry)})
 	end
 end
 
@@ -483,7 +483,3 @@ SetHttpHandler(exports.httpmanager:createHttpHandler{
 	authorization = Config.authorization,
 	routes = routes
 })
-
-if Config.webhook then
-	webhook:init(Config.webhook)
-end
