@@ -82,7 +82,7 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		exports.discord_rest:executeWebhook(Config.webhook, {content = formatLogEntry(entry)})
+		exports.discord_rest:executeWebhookUrl(Config.webhook, {content = formatLogEntry(entry)})
 	end
 end
 
