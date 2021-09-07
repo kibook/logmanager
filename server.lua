@@ -11,12 +11,16 @@ local function formatTime(time)
 	return os.date(Config.timeFormat, time)
 end
 
-local function formatLogEntry(entry)
+local function formatLogEntryMessage(entry)
 	if entry.coords then
-		return ("[%s][%s] %s: %s at (%.2f, %.2f, %.2f)"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message, entry.coords.x, entry.coords.y, entry.coords.z)
+		return ("[%s] %s: %s at (%.2f, %.2f, %.2f)"):format(entry.resource, entry.playerName or "server", entry.message, entry.coords.x, entry.coords.y, entry.coords.z)
 	else
-		return ("[%s][%s] %s: %s"):format(formatTime(entry.time), entry.resource, entry.playerName or "server", entry.message)
+		return ("[%s] %s: %s"):format(entry.resource, entry.playerName or "server", entry.message)
 	end
+end
+
+local function formatLogEntry(entry)
+	return ("[%s]"):format(formatTime(entry.time)) .. formatLogEntryMessage(entry)
 end
 
 local function printLogEntry(entry)
@@ -82,7 +86,7 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		exports.discord_rest:executeWebhookUrl(Config.webhook, {content = formatLogEntry(entry)})
+		exports.discord_rest:executeWebhookUrl(Config.webhook, {content = formatLogEntryMessage(entry)})
 	end
 end
 
