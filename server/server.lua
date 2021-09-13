@@ -88,7 +88,11 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		webhookQueue:add(formatLogEntryMessage(entry))
+		if Config.includeTimestampInWebhookMessage then
+			webhookQueue:add(formatLogEntry(entry))
+		else
+			webhookQueue:add(formatLogEntryMessage(entry))
+		end
 	end
 end
 

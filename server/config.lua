@@ -26,5 +26,8 @@ Config.events = {
 -- Discord webhook to post log messages to
 --Config.webhook = ""
 
+-- Include log timestamps in Discord messages
+Config.includeTimestampInWebhookMessage = true
+
 -- Realm or user list for HTTP handler authorization
 Config.authorization = "default"
