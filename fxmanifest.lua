@@ -7,6 +7,12 @@ dependencies {
 	"discord_rest"
 }
 
-shared_script "config.lua"
-server_script "server.lua"
-client_script "client.lua"
+server_scripts {
+	"server/config.lua",
+	"server/server.lua"
+}
+
+client_scripts {
+	"client/config.lua",
+	"client/client.lua"
+}
