@@ -28,7 +28,7 @@ function WebhookQueue:add(message)
 
 	local messageLen = message:len()
 
-	if self.contentLen + messageLen > discordCharacterLimit then
+	if self.contentLen + messageLen > discordCharacterLimit - 7 then
 		self:send()
 	end
 
@@ -37,7 +37,8 @@ function WebhookQueue:add(message)
 end
 
 function WebhookQueue:send()
-	exports.discord_rest:executeWebhookUrl(self.webhook, {content = self.content}):next(nil, function(err)
+	local content = "```\n" .. self.content .. "```"
+	exports.discord_rest:executeWebhookUrl(self.webhook, {content = content}):next(nil, function(err)
 		print("Error executing webhook: " .. err)
 	end)
 	self.content = ""
