@@ -9,6 +9,7 @@ dependencies {
 
 server_scripts {
 	"server/config.lua",
+	"server/webhookqueue.lua",
 	"server/server.lua"
 }
 

@@ -1,3 +1,5 @@
+local webhookQueue = Config.webhook and WebhookQueue:new(Config.webhook)
+
 RegisterNetEvent("logmanager:upload")
 RegisterNetEvent("baseevents:onPlayerDied")
 RegisterNetEvent("baseevents:onPlayerKilled")
@@ -86,7 +88,7 @@ local function log(entry)
 		end)
 
 	if Config.webhook then
-		exports.discord_rest:executeWebhookUrl(Config.webhook, {content = formatLogEntryMessage(entry)})
+		webhookQueue:add(formatLogEntryMessage(entry))
 	end
 end
 
