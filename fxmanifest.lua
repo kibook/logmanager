@@ -1,11 +1,9 @@
 fx_version "cerulean"
 game "common"
 
-dependencies {
-	"ghmattimysql",
-	"httpmanager",
-	"discord_rest"
-}
+dependency "ghmattimysql" -- https://github.com/GHMatti/ghmattimysql
+dependency "httpmanager"  -- https://github.com/kibook/httpmanager
+dependency "discord_rest" -- https://github.com/kibook/discord_rest
 
 server_scripts {
 	"server/config.lua",
