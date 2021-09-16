@@ -480,10 +480,10 @@ RegisterCommand("clearlogs", function(source, args, raw)
 		{
 			["after"] = query.after,
 			["before"] = query.before
-		},
-		function(results)
-			print(("%d log entries deleted"):format(results.affectedRows))
-		end)
+		}
+	):next(function(results)
+		print(("%d log entries deleted"):format(results.affectedRows))
+	end)
 end, true)
 
 if Config.enableDb then
@@ -527,8 +527,8 @@ if Config.enableDb then
 	local routes = {}
 
 	routes["/logs.json"] = function(req, res, helpers)
-		req.readJson(function(data)
-			sqlExecute(
+		req.readJson():next(function(data)
+			return sqlExecute(
 				[[
 				SELECT
 					time,
@@ -548,12 +548,11 @@ if Config.enableDb then
 				]],
 				{
 					["time"] = data.date
-				}
-			):next(function(results)
-				res.sendJson(results)
-			end, function(err)
-				res.sendError(500)
-			end)
+				})
+		end):next(function(results)
+			res.sendJson(results)
+		end, function(err)
+			res.sendError(500)
 		end)
 	end
 
