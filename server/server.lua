@@ -1,3 +1,4 @@
+local dbReady = false
 local webhookQueue = Config.webhook and WebhookQueue:new(Config.webhook)
 
 RegisterNetEvent("logmanager:upload")
@@ -8,6 +9,42 @@ RegisterNetEvent("baseevents:enteringVehicle")
 RegisterNetEvent("baseevents:enteringAborted")
 RegisterNetEvent("baseevents:enteredVehicle")
 RegisterNetEvent("baseevents:leftVehicle")
+
+local function sqlExecute(sql, params)
+	local p = promise.new()
+
+	if not dbReady then
+		return p:reject("Database is not initialized")
+	end
+
+	exports.ghmattimysql:execute(sql, params, function(results)
+		if results then
+			p:resolve(results)
+		else
+			p:reject("Execution failed")
+		end
+	end)
+
+	return p
+end
+
+local function sqlTransaction(statements, params)
+	local p = promise.new()
+
+	if not dbReady then
+		return p:reject("Database is not initialized")
+	end
+
+	exports.ghmattimysql:transaction(statements, params, function(success)
+		if success then
+			p:resolve()
+		else
+			p:reject("Transaction failed")
+		end
+	end)
+
+	return p
+end
 
 local function formatTime(time)
 	return os.date(Config.timeFormat, time)
@@ -52,25 +89,26 @@ local function log(entry)
 		end
 	end
 
-	exports.ghmattimysql:execute(
-		[[
-		INSERT INTO
-			logmanager_log (time, resource, endpoint, player_name, message, coords_x, coords_y, coords_z)
-		VALUES
-			(FROM_UNIXTIME(@time), @resource, @endpoint, @player_name, @message, @coords_x, @coords_y, @coords_z)
-		]],
-		{
-			["time"] = entry.time,
-			["resource"] = entry.resource,
-			["endpoint"] = entry.endpoint,
-			["player_name"] = entry.playerName,
-			["message"] = entry.message,
-			["coords_x"] = entry.coords and entry.coords.x,
-			["coords_y"] = entry.coords and entry.coords.y,
-			["coords_z"] = entry.coords and entry.coords.z
-		},
-		function(results)
-			if results and entry.identifiers then
+	if Config.enableDb then
+		sqlExecute(
+			[[
+			INSERT INTO
+				logmanager_log (time, resource, endpoint, player_name, message, coords_x, coords_y, coords_z)
+			VALUES
+				(FROM_UNIXTIME(@time), @resource, @endpoint, @player_name, @message, @coords_x, @coords_y, @coords_z)
+			]],
+			{
+				["time"] = entry.time,
+				["resource"] = entry.resource,
+				["endpoint"] = entry.endpoint,
+				["player_name"] = entry.playerName,
+				["message"] = entry.message,
+				["coords_x"] = entry.coords and entry.coords.x,
+				["coords_y"] = entry.coords and entry.coords.y,
+				["coords_z"] = entry.coords and entry.coords.z
+			}
+		):next(function(results)
+			if entry.identifiers then
 				local statements = {}
 
 				for _, identifier in ipairs(entry.identifiers) do
@@ -83,9 +121,10 @@ local function log(entry)
 					})
 				end
 
-				exports.ghmattimysql:transaction(statements)
+				return sqlTransaction(statements)
 			end
 		end)
+	end
 
 	if Config.webhook then
 		if Config.includeTimestampInWebhookMessage then
@@ -266,10 +305,8 @@ if Config.events.core.playerDropped then
 	end)
 end
 
-local function collateLogs(fn, query, ...)
-	local args = ...
-
-	exports.ghmattimysql:execute(
+local function collateLogs(query)
+	return sqlExecute(
 		[[
 		SELECT
 			logmanager_log.id as id,
@@ -291,46 +328,44 @@ local function collateLogs(fn, query, ...)
 		{
 			["after"] = query.after,
 			["before"] = query.before
-		},
-		function(results)
-			if results then
-				local collated = {}
+		}
+	):next(function(results)
+		local collated = {}
 
-				for _, result in ipairs(results) do
-					if not collated[result.id] then
-						collated[result.id] = {}
+		for _, result in ipairs(results) do
+			if not collated[result.id] then
+				collated[result.id] = {}
 
-						collated[result.id].time = result.time / 1000
-						collated[result.id].resource = result.resource
-						collated[result.id].endpoint = result.endpoint
-						collated[result.id].playerName = result.player_name
-						collated[result.id].message = result.message
+				collated[result.id].time = result.time / 1000
+				collated[result.id].resource = result.resource
+				collated[result.id].endpoint = result.endpoint
+				collated[result.id].playerName = result.player_name
+				collated[result.id].message = result.message
 
-						if result.coords_x and result.coords_y and result.coords_z then
-							collated[result.id].coords = vector3(result.coords_x, result.coords_x, result.coords_z)
-						end
-
-						collated[result.id].identifiers = {}
-					end
-
-					table.insert(collated[result.id].identifiers, result.identifier)
+				if result.coords_x and result.coords_y and result.coords_z then
+					collated[result.id].coords = vector3(result.coords_x, result.coords_x, result.coords_z)
 				end
 
-				local entries = {}
-
-				for _, entry in pairs(collated) do
-					if matchesQuery(query, entry) then
-						table.insert(entries, entry)
-					end
-				end
-
-				table.sort(entries, function(a, b)
-					return a.time < b.time
-				end)
-
-				fn(entries, args)
+				collated[result.id].identifiers = {}
 			end
+
+			table.insert(collated[result.id].identifiers, result.identifier)
+		end
+
+		local entries = {}
+
+		for _, entry in pairs(collated) do
+			if matchesQuery(query, entry) then
+				table.insert(entries, entry)
+			end
+		end
+
+		table.sort(entries, function(a, b)
+			return a.time < b.time
 		end)
+
+		return entries
+	end)
 end
 
 local function printLogEntries(entries)
@@ -357,6 +392,19 @@ local function writeLogEntries(entries, name)
 	SaveResourceFile(GetCurrentResourceName(), name, text, -1)
 end
 
+local function getCurrentDay()
+	local now = os.date("*t", os.time())
+
+	return os.time {
+		year = now.year,
+		month = now.month,
+		day = now.day,
+		hour = 0,
+		min = 0,
+		sec = 0
+	}
+end
+
 local function buildQuery(args)
 	local query = {}
 
@@ -378,40 +426,50 @@ local function buildQuery(args)
 		end
 	end
 
-	return query
-end
-
-local function getCurrentDay()
-	local now = os.date("*t", os.time())
-
-	return os.time {
-		year = now.year,
-		month = now.month,
-		day = now.day,
-		hour = 0,
-		min = 0,
-		sec = 0
-	}
-end
-
-RegisterCommand("showlogs", function(source, args, raw)
-	local query = buildQuery(args)
-
 	if not (query.all or query.after or query.before) then
 		query.after = formatTime(getCurrentDay())
 	end
 
-	collateLogs(printLogEntries, query)
+	return query
+end
+
+RegisterCommand("showlogs", function(source, args, raw)
+	if not Config.enableDb then
+		print("The showlogs command requires the SQL DB to be enabled (Config.enableDb).")
+		return
+	end
+
+	local query = buildQuery(args)
+
+	collateLogs(query):next(function(entries)
+		printLogEntries(entries)
+	end)
 end, true)
 
 RegisterCommand("writelogs", function(source, args, raw)
-	collateLogs(writeLogEntries, {}, args[1] or "log.txt")
+	if not Config.enableDb then
+		print("The writelogs command requires the SQL DB to be enabled (Config.enableDb).")
+		return
+	end
+
+	local filename = args[1] or "log.txt"
+	table.remove(args, 1)
+	local query = buildQuery(args)
+
+	collateLogs(query):next(function(entries)
+		writeLogEntries(args[1] or "log.txt")
+	end)
 end, true)
 
 RegisterCommand("clearlogs", function(source, args, raw)
+	if not Config.enableDb then
+		print("The clearlogs command requires the SQL DB to be enabled (Config.enableDb).")
+		return
+	end
+
 	local query = buildQuery(args)
 
-	exports.ghmattimysql:execute(
+	sqlExecute(
 		[[
 		DELETE FROM
 			logmanager_log
@@ -428,68 +486,79 @@ RegisterCommand("clearlogs", function(source, args, raw)
 		end)
 end, true)
 
-exports.ghmattimysql:transaction {
-	[[
-	CREATE TABLE IF NOT EXISTS logmanager_log (
-		id INT NOT NULL AUTO_INCREMENT,
-		time DATETIME NOT NULL,
-		resource VARCHAR(255),
-		endpoint VARCHAR(255),
-		player_name VARCHAR(255),
-		message VARCHAR(255),
-		coords_x FLOAT,
-		coords_y FLOAT,
-		coords_z FLOAT,
-		PRIMARY KEY (id)
-	)
-	]],
-	[[
-	CREATE TABLE IF NOT EXISTS logmanager_log_identifier (
-		id INT NOT NULL AUTO_INCREMENT,
-		log_id INT NOT NULL,
-		identifier VARCHAR(255) NOT NULL,
-		PRIMARY KEY (id),
-		FOREIGN KEY (log_id) REFERENCES logmanager_log (id) ON DELETE CASCADE
-	)
-	]]
-}
-
-local routes = {}
-
-routes["/logs.json"] = function(req, res, helpers)
-	req.readJson(function(data)
-		exports.ghmattimysql:execute(
+if Config.enableDb then
+	exports.ghmattimysql:transaction(
+		{
 			[[
-			SELECT
-				time,
-				resource,
-				endpoint,
-				player_name,
-				message,
-				coords_x,
-				coords_y,
-				coords_z
-			FROM
-				logmanager_log
-			WHERE
-				(@time IS NULL OR time >= @time)
-			ORDER BY
-				time
+			CREATE TABLE IF NOT EXISTS logmanager_log (
+				id INT NOT NULL AUTO_INCREMENT,
+				time DATETIME NOT NULL,
+				resource VARCHAR(255),
+				endpoint VARCHAR(255),
+				player_name VARCHAR(255),
+				message VARCHAR(255),
+				coords_x FLOAT,
+				coords_y FLOAT,
+				coords_z FLOAT,
+				PRIMARY KEY (id)
+			)
 			]],
-			{
-				["time"] = data.date
-			},
-			function(results)
-				if results then
-					res.sendJson(results)
-				else
-					res.sendError(500)
-				end
-			end)
-	end)
-end
+			[[
+			CREATE TABLE IF NOT EXISTS logmanager_log_identifier (
+				id INT NOT NULL AUTO_INCREMENT,
+				log_id INT NOT NULL,
+				identifier VARCHAR(255) NOT NULL,
+				PRIMARY KEY (id),
+				FOREIGN KEY (log_id) REFERENCES logmanager_log (id) ON DELETE CASCADE
+			)
+			]]
+		},
+		{},
+		function(success)
+			if success then
+				print("Connected to DB successfully")
+				dbReady = true
+			else
+				print("Failed to connect to DB")
+				dbReady = false
+			end
+		end)
 
-SetHttpHandler(exports.httpmanager:createHttpHandler{
-	authorization = Config.authorization,
-	routes = routes
-})
+	local routes = {}
+
+	routes["/logs.json"] = function(req, res, helpers)
+		req.readJson(function(data)
+			sqlExecute(
+				[[
+				SELECT
+					time,
+					resource,
+					endpoint,
+					player_name,
+					message,
+					coords_x,
+					coords_y,
+					coords_z
+				FROM
+					logmanager_log
+				WHERE
+					(@time IS NULL OR time >= @time)
+				ORDER BY
+					time
+				]],
+				{
+					["time"] = data.date
+				}
+			):next(function(results)
+				res.sendJson(results)
+			end, function(err)
+				res.sendError(500)
+			end)
+		end)
+	end
+
+	SetHttpHandler(exports.httpmanager:createHttpHandler{
+		authorization = Config.authorization,
+		routes = routes
+	})
+end

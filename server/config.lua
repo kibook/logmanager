@@ -23,6 +23,9 @@ Config.events = {
 	}
 }
 
+-- Whether to store logs in the SQL database, which also enables console commands and the web UI
+Config.enableDb = true
+
 -- Discord webhook to post log messages to
 --Config.webhook = ""
 
