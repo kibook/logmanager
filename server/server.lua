@@ -87,6 +87,10 @@ local function log(entry)
 		if not entry.playerName then
 			entry.playerName = GetPlayerName(entry.player)
 		end
+
+		if entry.coords == true then
+			entry.coords = GetEntityCoords(GetPlayerPed(entry.player))
+		end
 	end
 
 	if Config.enableDb then

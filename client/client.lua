@@ -9,6 +9,10 @@ local function log(entry)
 		entry.resource = GetInvokingResource() or GetCurrentResourceName()
 	end
 
+	if entry.coords == true then
+		entry.coords = GetEntityCoords(PlayerPedId())
+	end
+
 	table.insert(clientLog, entry)
 end
 
