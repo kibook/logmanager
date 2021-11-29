@@ -17,7 +17,7 @@ local function sqlExecute(sql, params)
 		return p:reject("Database is not initialized")
 	end
 
-	exports.ghmattimysql:execute(sql, params, function(results)
+	exports.oxmysql:execute(sql, params, function(results)
 		if results then
 			p:resolve(results)
 		else
@@ -35,7 +35,7 @@ local function sqlTransaction(statements, params)
 		return p:reject("Database is not initialized")
 	end
 
-	exports.ghmattimysql:transaction(statements, params, function(success)
+	exports.oxmysql:transaction(statements, params, function(success)
 		if success then
 			p:resolve()
 		else
@@ -491,7 +491,7 @@ RegisterCommand("clearlogs", function(source, args, raw)
 end, true)
 
 if Config.enableDb then
-	exports.ghmattimysql:transaction(
+	exports.oxmysql:transaction(
 		{
 			[[
 			CREATE TABLE IF NOT EXISTS logmanager_log (

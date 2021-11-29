@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "common"
 
 -- These dependencies can be commented out if Config.enableDb is false
-dependency "ghmattimysql" -- https://github.com/GHMatti/ghmattimysql
+dependency "oxmysql"      -- https://github.com/overextended/oxmysql
 dependency "httpmanager"  -- https://github.com/kibook/httpmanager
 
 -- This dependency can be commented out if Config.webhook is commented out.

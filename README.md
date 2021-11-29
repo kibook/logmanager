@@ -6,7 +6,7 @@ FiveM/RedM event logger
 
 # Dependencies
 
-- [ghmattimysql](https://github.com/GHMatti/ghmattimysql) for SQL database interactions.
+- [oxmysql](https://github.com/overextended/oxmysql) for SQL database interactions.
 - [httpmanager](https://github.com/kibook/httpmanager) for the web user interface.
 - [discord_rest](https://github.com/kibook/discord_rest) for logging messages to a Discord channel when `Config.webhook` is enabled.
 
